@@ -1,0 +1,4 @@
+- When the email is not found we are throwing usernamenotfoundexception but still we see Badcredentials exception
+- This happens because spring internally converts the usernamenotfoundexception to badcredentials
+- This is done to hide whether email is wrong or password is wrong because hackers might try to different combinations
+    and if they find any email, and they see wrong password that will make some steps easy for the to crack a account
