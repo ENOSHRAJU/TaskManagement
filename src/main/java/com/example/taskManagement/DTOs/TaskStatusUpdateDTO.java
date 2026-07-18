@@ -1,6 +1,6 @@
 package com.example.taskManagement.DTOs;
 
-import com.example.taskManagement.Model.Status;
+import com.example.taskManagement.Enums.TaskStatus;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,5 +9,5 @@ import lombok.Setter;
 @Setter
 public class TaskStatusUpdateDTO {
     @NotNull
-    private Status status;
+    private TaskStatus status;
 }

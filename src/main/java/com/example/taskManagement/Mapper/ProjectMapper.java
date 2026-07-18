@@ -1,12 +1,11 @@
 package com.example.taskManagement.Mapper;
 
+import com.example.taskManagement.DTOs.ProjectCreatedResDTO;
 import com.example.taskManagement.DTOs.ProjectRequestDTO;
 import com.example.taskManagement.DTOs.ProjectResponseDTO;
 import com.example.taskManagement.DTOs.ProjectSummaryDTO;
 import com.example.taskManagement.Model.Project;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 
 @Component
@@ -20,18 +19,18 @@ public class ProjectMapper {
         responseDTO.setStatus(project.getStatus());
         responseDTO.setCreatedBy(UserMapper.userSummaryDTO(project.getCreatedBy()));
         responseDTO.setCreatedAt(project.getCreatedAt());
-        responseDTO.setTasks(
-                project.getTasks() == null ? List.of() :
-                project.getTasks().stream()
-                        .map(TaskMapper::toSummaryDTO)
-                        .toList()
-        );
-        responseDTO.setMembers(
-                project.getMembers() == null ? List.of() :
-                project.getMembers().stream()
-                        .map(UserMapper::userSummaryDTO)
-                        .toList()
-        );
+        responseDTO.setUpdatedAt(project.getUpdatedAt());
+        return responseDTO;
+    }
+
+    public static ProjectCreatedResDTO toCreateDTO(Project project) {
+        ProjectCreatedResDTO responseDTO = new ProjectCreatedResDTO();
+        responseDTO.setProjectId(project.getId());
+        responseDTO.setName(project.getName());
+        responseDTO.setDescription(project.getDescription());
+        responseDTO.setStatus(project.getStatus());
+        responseDTO.setCreatedBy(UserMapper.userSummaryDTO(project.getCreatedBy()));
+        responseDTO.setCreatedAt(project.getCreatedAt());
         return responseDTO;
     }
 
@@ -50,11 +49,9 @@ public class ProjectMapper {
         summaryDTO.setStatus(project.getStatus());
         summaryDTO.setCreatedBy(UserMapper.userSummaryDTO(project.getCreatedBy()));
         summaryDTO.setCreatedAt(project.getCreatedAt());
-
-        if (project.getTasks() != null) summaryDTO.setTotalTask(project.getTasks().stream().count());
-        else summaryDTO.setTotalTask(0L);
-
-        if(project.getMembers() != null) summaryDTO.setTotalMembers(project.getMembers().stream().count());
+        if (project.getTasks() != null) summaryDTO.setTotalTasks((long)project.getTasks().size());
+        else summaryDTO.setTotalTasks(0L);
+        if(project.getMembers() != null) summaryDTO.setTotalMembers((long)project.getMembers().size());
         else summaryDTO.setTotalMembers(0L);
         return summaryDTO;
     }

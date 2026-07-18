@@ -14,9 +14,10 @@ public class TaskMapper {
         Task task = new Task();
         task.setTitle(requestDTO.getTitle());
         task.setDescription(requestDTO.getDescription());
-        task.setPriority(requestDTO.getPriority());
+        task.setTaskPriority(requestDTO.getTaskPriority());
         task.setProject(project);
         task.setTaskCategory(requestDTO.getTaskCategory());
+        task.setDueDate(requestDTO.getDueDate());
         return task;
     }
 
@@ -26,7 +27,7 @@ public class TaskMapper {
         responseDTO.setTitle(task.getTitle());
         responseDTO.setDescription(task.getDescription());
         responseDTO.setStatus(task.getStatus());
-        responseDTO.setPriority(task.getPriority());
+        responseDTO.setTaskPriority(task.getTaskPriority());
         responseDTO.setTaskCategory(task.getTaskCategory());
         if(task.getAssignedTo()!=null) {
             responseDTO.setAssignedTo(UserMapper.userSummaryDTO(task.getAssignedTo()));
@@ -34,6 +35,7 @@ public class TaskMapper {
         responseDTO.setProjectId(task.getProject().getId());
         responseDTO.setCreatedAt(task.getCreatedAt());
         responseDTO.setUpdatedAt(task.getUpdatedAt());
+        responseDTO.setDueDate(task.getDueDate());
         return responseDTO;
     }
 
@@ -43,12 +45,13 @@ public class TaskMapper {
         summaryDTO.setTitle(task.getTitle());
         summaryDTO.setStatus(task.getStatus());
         summaryDTO.setTaskCategory(task.getTaskCategory());
-        summaryDTO.setPriority(task.getPriority());
+        summaryDTO.setTaskPriority(task.getTaskPriority());
         if(task.getAssignedTo() != null){
             summaryDTO.setAssignedTo(UserMapper.userSummaryDTO(task.getAssignedTo()));
         }
         summaryDTO.setCreatedAt(task.getCreatedAt());
         summaryDTO.setUpdatedAt(task.getUpdatedAt());
+        summaryDTO.setDueDate(task.getDueDate());
         return summaryDTO;
     }
 }

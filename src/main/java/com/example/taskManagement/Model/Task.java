@@ -1,9 +1,14 @@
 package com.example.taskManagement.Model;
 
+import com.example.taskManagement.Enums.TaskPriority;
+import com.example.taskManagement.Enums.TaskCategory;
+import com.example.taskManagement.Enums.TaskStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -11,6 +16,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(
+        name = "tasks",
         indexes = {
                 @Index(name = "idx_task_user", columnList = "task_user_id"),
                 @Index(name = "idx_task_project", columnList = "task_project_id")
@@ -19,8 +25,8 @@ import java.time.LocalDateTime;
 public class Task {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(name = "task_title", nullable = false)
     private String title;
@@ -30,15 +36,15 @@ public class Task {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "task_status", nullable = false)
-    private Status status;
+    private TaskStatus status;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "taskCategory", nullable = false)
-    private Category taskCategory;
+    private TaskCategory taskCategory;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "task_priority", nullable = false)
-    private Priority priority;
+    private TaskPriority taskPriority;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_user_id")
@@ -48,25 +54,42 @@ public class Task {
     @JoinColumn(name = "task_project_id", nullable = false)
     private Project project;
 
-    @Column(name = "createdAt")
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @Column(name = "lastUpdatedAt")
+    @Column(name = "last_updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "due_date")
+    private LocalDate dueDate;
 
     @Column(name = "is_deleted", nullable = false)
     private boolean deleted;
 
     @PrePersist
     public void prePersist() {
-        this.status = Status.OPEN;
+        this.status = TaskStatus.OPEN;
         this.deleted = false;
         this.createdAt = LocalDateTime.now();
     }
 
     @PreUpdate
     public void postPersist() {
+        System.out.println("PreUpdate executed");
         this.updatedAt = LocalDateTime.now();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Task)) return false;
+        Task other = (Task) o;
+        return id != null && id.equals(other.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 
 }

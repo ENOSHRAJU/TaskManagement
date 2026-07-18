@@ -1,6 +1,6 @@
 package com.example.taskManagement.DTOs;
 
-import com.example.taskManagement.Model.ProjectStatus;
+import com.example.taskManagement.Enums.ProjectStatus;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -23,7 +24,7 @@ import java.util.List;
 })
 public class ProjectResponseDTO {
     @NotNull(message = "project id should not be empty")
-    private Long projectId;
+    private UUID projectId;
     @NotNull(message = "project name should not be empty")
     private String name;
     @NotNull(message = "project description should not be empty")
@@ -34,6 +35,6 @@ public class ProjectResponseDTO {
     private UserSummaryDTO createdBy;
     @NotNull(message = "project createdAt should not be empty")
     private LocalDateTime createdAt;
-    private List<TasksSummaryDTO> tasks;
-    private List<UserSummaryDTO> members;
+    @NotNull(message = "project updatedAt should not be empty")
+    private LocalDateTime updatedAt;
 }

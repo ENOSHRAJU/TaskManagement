@@ -1,13 +1,15 @@
 package com.example.taskManagement.DTOs;
 
-import com.example.taskManagement.Model.Category;
-import com.example.taskManagement.Model.Priority;
-import com.example.taskManagement.Model.Status;
+import com.example.taskManagement.Enums.TaskPriority;
+import com.example.taskManagement.Enums.TaskStatus;
+import com.example.taskManagement.Enums.TaskCategory;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -22,12 +24,13 @@ import java.time.LocalDateTime;
         "updatedAt"
 })
 public class TasksSummaryDTO {
-    private Long id;
+    private UUID id;
     private String title;
-    private Status status;
-    private Category taskCategory;
-    private Priority priority;
+    private TaskStatus status;
+    private TaskCategory taskCategory;
+    private TaskPriority taskPriority;
     private UserSummaryDTO assignedTo;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDate dueDate;
 }

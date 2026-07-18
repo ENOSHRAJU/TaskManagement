@@ -1,22 +1,29 @@
 package com.example.taskManagement.Service;
 
 import com.example.taskManagement.DTOs.*;
-import com.example.taskManagement.Model.ProjectStatus;
+import com.example.taskManagement.Enums.ProjectSortField;
+import com.example.taskManagement.Enums.ProjectStatus;
+import com.example.taskManagement.Enums.UserSortField;
+import com.example.taskManagement.Model.Project;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface ProjectService {
 
-    List<ProjectResponseDTO> getAllProjects();
-    ProjectResponseDTO getProjectById(Long projectId);
+    Project findProjectById(UUID projectId);
+    Page<ProjectSummaryDTO> getAllProjects(int page, int size, ProjectStatus status, String search, ProjectSortField sortBy, Sort.Direction direction, UUID userId);
+    ProjectResponseDTO getProjectById(UUID projectId);
     List<ProjectResponseDTO> getProjectsByStatus(ProjectStatus status);
-    List<ProjectResponseDTO> getProjectsByCreatedBy(Long userId);
-    ProjectResponseDTO createProject(ProjectRequestDTO requestDTO);
-    ProjectResponseDTO updateProject(ProjectUpdateDTO updateDTO);
-    String deleteProject(Long projectId);
-    ProjectResponseDTO addUserToProject(Long userId, Long projectId);
-    ProjectResponseDTO removeUserFromProject(Long userId, Long projectId);
-    List<UserSummaryDTO> getAllUsersByProject(Long projectId);
+    List<ProjectResponseDTO> getProjectsByCreatedBy(UUID userId);
+    Page<UserSummaryDTO> getAllUsersByProject(UUID projectId, int page, int size, String search, UserSortField sortBy, Sort.Direction direction);
+    ProjectCreatedResDTO createProject(ProjectRequestDTO requestDTO);
+    ProjectResponseDTO updateProject(UUID projectId, ProjectUpdateDTO updateDTO);
+    String deleteProject(UUID projectId);
+    UserAssignResponseDTO addUserToProject(UUID userId, UUID projectId);
+    ProjectResponseDTO removeUserFromProject(UUID userId, UUID projectId);
 
 }
 

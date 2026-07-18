@@ -1,15 +1,16 @@
 package com.example.taskManagement.DTOs;
 
-import com.example.taskManagement.Model.Category;
-import com.example.taskManagement.Model.Priority;
-import com.example.taskManagement.Model.Status;
+import com.example.taskManagement.Enums.TaskPriority;
+import com.example.taskManagement.Enums.TaskStatus;
+import com.example.taskManagement.Enums.TaskCategory;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.cglib.core.Local;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -28,21 +29,23 @@ import java.time.LocalDateTime;
 })
 public class TaskResponseDTO {
     @NotNull(message = "Task id should not be null")
-    private Long id;
+    private UUID id;
     @NotNull(message = "Task title should not be null")
     private String title;
     @NotNull(message = "Task description should not be null")
     private String description;
     @NotNull(message = "Task status should not be null")
-    private Status status;
+    private TaskStatus status;
     @NotNull(message = "Task priority should not be null")
-    private Priority priority;
+    private TaskPriority taskPriority;
     @NotNull(message = "Task category should not be null")
-    private Category taskCategory;
+    private TaskCategory taskCategory;
     private UserSummaryDTO assignedTo;
     @NotNull(message = "Task project should not be null")
-    private long projectId;
+    private UUID projectId;
     @NotNull(message = "Task createdAt should not be null")
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    @NotNull(message = "Task dueDate should not be null")
+    private LocalDate dueDate;
 }
