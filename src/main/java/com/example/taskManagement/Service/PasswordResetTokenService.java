@@ -11,6 +11,6 @@ public interface PasswordResetTokenService {
     PasswordResetToken findByUserId(UUID userId);
     PasswordResetToken createOrUpdate(User user);
     PasswordResetToken findUserFromToken(String token);
-    void checkTokenExpiry(LocalDateTime expiryTime);
+    void checkTokenExpiry(PasswordResetToken resetToken);
     void deleteToken(PasswordResetToken resetToken);
 }

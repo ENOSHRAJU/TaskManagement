@@ -12,6 +12,7 @@ import com.example.taskManagement.Enums.AuditEntityType;
 import com.example.taskManagement.Exception.DuplicateEmailException;
 import com.example.taskManagement.Enums.RoleTypes;
 import com.example.taskManagement.Exception.SamePasswordException;
+import com.example.taskManagement.Model.EmailVerificationToken;
 import com.example.taskManagement.Model.PasswordResetToken;
 import com.example.taskManagement.Model.User;
 import com.example.taskManagement.Repository.PasswordResetTokenRepository;
@@ -40,9 +41,10 @@ public class AuthService {
     private final AuditService auditService;
     private final PasswordResetTokenService passwordResetTokenService;
     private final EmailService emailService;
+    private final EmailVerificationTokenService emailVerification;
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthService.class);
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleRepository roleRepository, AuthenticationManager authenticationManager, JwtService jwtService, UserService userService, AuditService auditService, SecurityUtil securityUtil, PasswordResetTokenRepository resetTokenRepository, PasswordResetTokenService passwordResetTokenService, PasswordResetTokenRepository passwordResetTokenRepository, EmailService emailService) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleRepository roleRepository, AuthenticationManager authenticationManager, JwtService jwtService, UserService userService, AuditService auditService, SecurityUtil securityUtil, PasswordResetTokenRepository resetTokenRepository, PasswordResetTokenService passwordResetTokenService, PasswordResetTokenRepository passwordResetTokenRepository, EmailService emailService, EmailVerificationTokenService emailVerification) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
@@ -52,6 +54,7 @@ public class AuthService {
         this.auditService = auditService;
         this.passwordResetTokenService = passwordResetTokenService;
         this.emailService = emailService;
+        this.emailVerification = emailVerification;
     }
 
     @Transactional
@@ -65,12 +68,44 @@ public class AuthService {
         user.setName(registerDTO.getName());
         user.setEmail(registerDTO.getEmail());
         user.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
-        user.getRoles().add(roleRepository.findByRole(RoleTypes.USER.toString())
+        user.getRoles().add(roleRepository.findByRole(RoleTypes.MANAGER.toString())
                 .orElseThrow(() -> new IllegalStateException("Role not found")));
         userRepository.save(user);
+        EmailVerificationToken verificationToken = emailVerification.createOrUpdate(user);
+        LOGGER.info("Verification email sent to user {}", user.getId());
         LOGGER.info("User registered successfully userId: {}, email: {}", user.getId(), user.getEmail());
         auditService.log(AuditEntityType.USER,user.getId(), AuditAction.CREATE,"User", " - ", user.getEmail(), user.getId());
+        emailService.sendVerificationEmail(user, verificationToken);
         return user.getEmail();
+    }
+
+    @Transactional
+    public String registerUserTemp(RegisterDTO registerDTO) {
+        LOGGER.info("Registration request received for email: {}", registerDTO.getEmail());
+        User user = userService.findUserByEmail(registerDTO.getEmail());
+        if(user == null) {
+            user = new User();
+            user.setName(registerDTO.getName());
+            user.setEmail(registerDTO.getEmail());
+            user.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
+            user.getRoles().add(roleRepository.findByRole(RoleTypes.MANAGER.toString())
+                    .orElseThrow(() -> new IllegalStateException("Role not found")));
+            userRepository.save(user);
+            LOGGER.info("User registered successfully userId: {}, email: {}", user.getId(), user.getEmail());
+            EmailVerificationToken verificationToken = emailVerification.createOrUpdate(user);
+            LOGGER.info("Verification email sent to user {}", user.getId());
+            auditService.log(AuditEntityType.USER,user.getId(), AuditAction.CREATE,"User", " - ", user.getEmail(), user.getId());
+            emailService.sendVerificationEmail(user, verificationToken);
+        } else if(user.isActive()) {
+            LOGGER.warn("Registration failed: Email already exists: {}", registerDTO.getEmail());
+            throw new DuplicateEmailException("Email already exists");
+        } else {
+            LOGGER.info("User: {} is registered before but not activated the account", user.getId());
+            EmailVerificationToken verificationToken = emailVerification.createOrUpdate(user);
+            LOGGER.info("Verification email sent to user {}", user.getId());
+            emailService.sendVerificationEmail(user, verificationToken);
+        }
+        return "Registration successful. Please verify your email.";
     }
 
     public LoginResponseDTO login(LoginRequestDTO requestDTO) {
@@ -111,7 +146,7 @@ public class AuthService {
         LOGGER.info("Fetching user using token from password reset token: {}", token);
         PasswordResetToken resetToken = passwordResetTokenService.findUserFromToken(token);
         User user = resetToken.getUser();
-        passwordResetTokenService.checkTokenExpiry(resetToken.getExpiryTime());
+        passwordResetTokenService.checkTokenExpiry(resetToken);
         String oldValue = user.getPassword();
         LOGGER.debug("User successfully loaded: {}", user.getName());
         if (passwordEncoder.matches(resetDTO.getNewPassword(), oldValue)) {

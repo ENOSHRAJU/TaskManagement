@@ -26,7 +26,7 @@ public class AuthController {
     )
     @PostMapping("/register")
     public ApiResponse<String> registerUser(@RequestBody @Valid RegisterDTO registerDTO) {
-        return ApiResponse.success("Registered user successfully", authService.registerUser(registerDTO));
+        return ApiResponse.success("Verification email sent successfully", authService.registerUser(registerDTO));
     }
 
     @Operation(
