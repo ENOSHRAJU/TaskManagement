@@ -9,6 +9,7 @@ public interface RefreshTokenService {
     RefreshToken findByUserId(UUID userId);
     RefreshToken createOrUpdate(User user);
     RefreshToken findByToken(String token);
-    void verifyExpiration(RefreshToken refreshToken);
+    boolean verifyExpiration(RefreshToken refreshToken);
     void deleteToken(RefreshToken refreshToken);
+    void deleteToken(User user);
 }

@@ -1,6 +1,7 @@
 package com.example.taskManagement.Repository;
 
 import com.example.taskManagement.Model.PasswordResetToken;
+import com.example.taskManagement.Model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

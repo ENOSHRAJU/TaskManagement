@@ -31,16 +31,16 @@ public class RefreshToken {
     private LocalDateTime expiryDate;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JoinColumn(name = "user_id", nullable =false, unique = true)
     @Schema(hidden = true)
     private User user;
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     @Schema(hidden = true)
     private LocalDateTime createdAt;
 
     @PrePersist
     public void prePersist() {
-        createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
     }
 }

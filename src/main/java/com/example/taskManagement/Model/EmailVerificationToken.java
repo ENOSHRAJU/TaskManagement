@@ -22,7 +22,7 @@ public class EmailVerificationToken {
     private UUID id;
 
     @Column(nullable = false, unique = true)
-    private UUID token;
+    private String token;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -31,9 +31,4 @@ public class EmailVerificationToken {
     @Column(nullable = false)
     private LocalDateTime expiryDate;
 
-    @PrePersist
-    public void prePersist() {
-        this.token = UUID.randomUUID();
-        this.expiryDate = LocalDateTime.now().plusHours(24);
-    }
 }

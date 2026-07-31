@@ -1,10 +1,8 @@
 package com.example.taskManagement.Service;
 
 import com.example.taskManagement.Model.EmailVerificationToken;
-import com.example.taskManagement.Model.PasswordResetToken;
 import com.example.taskManagement.Model.User;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 public interface EmailVerificationTokenService {

@@ -1,5 +1,6 @@
 package com.example.taskManagement.Service;
 
+import com.example.taskManagement.Exception.InvalidEmailVerificationToken;
 import com.example.taskManagement.Model.EmailVerificationToken;
 import com.example.taskManagement.Model.User;
 import com.example.taskManagement.Repository.EmailVerificationTokenRepository;
@@ -34,7 +35,7 @@ public class EmailVerificationTokenServiceImpl implements EmailVerificationToken
             verificationToken = new EmailVerificationToken();
             verificationToken.setUser(user);
         }
-        verificationToken.setToken(UUID.randomUUID());
+        verificationToken.setToken(UUID.randomUUID().toString());
         verificationToken.setExpiryDate(LocalDateTime.now().plusHours(EMAIL_VERIFICATION_TOKEN_EXPIRY_HOURS));
         emailVerificationTokenRepository.save(verificationToken);
         LOGGER.info("Email verification token {} has been successfully created for user {}", verificationToken.getId(), user.getId());
@@ -43,16 +44,16 @@ public class EmailVerificationTokenServiceImpl implements EmailVerificationToken
 
     @Override
     public EmailVerificationToken findByToken(String token) {
-        return null;
+        return emailVerificationTokenRepository.findByToken(token).orElse(null);
     }
 
     @Override
     public void checkTokenExpiry(EmailVerificationToken verificationToken) {
-
+        // Temporarily not including expiry check
     }
 
     @Override
     public void deleteToken(EmailVerificationToken verificationToken) {
-
+        emailVerificationTokenRepository.delete(verificationToken);
     }
 }
