@@ -53,7 +53,7 @@ public class User {
     private Set<Project> projects = new HashSet<>();
 
     @Column(name = "is_active", nullable = false)
-    private boolean active = true;
+    private boolean active;
 
     //Audits
     @Column(name = "created_at", nullable = false)
@@ -65,6 +65,7 @@ public class User {
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
+        this.active = false;
     }
 
     @PreUpdate

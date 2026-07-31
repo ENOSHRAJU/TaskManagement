@@ -40,7 +40,8 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
         resetToken.setToken(UUID.randomUUID().toString());
         resetToken.setExpiryTime(LocalDateTime.now().plusMinutes(RESET_TOKEN_EXPIRY_MINUTES));
         LOGGER.info("Creating/Updating password reset token for userId {}", user.getId());
-        return passwordResetTokenRepository.save(resetToken);
+        passwordResetTokenRepository.save(resetToken);
+        return resetToken;
     }
 
     @Override
@@ -52,8 +53,8 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
     }
 
     @Override
-    public void checkTokenExpiry(LocalDateTime expiryTime) {
-        if(expiryTime.isBefore(LocalDateTime.now())){
+    public void checkTokenExpiry(PasswordResetToken resetToken) {
+        if(resetToken.getExpiryTime().isBefore(LocalDateTime.now())){
             LOGGER.warn("Reset token is expired");
             throw new ResetTokenExpired("Reset token expired");
         }
