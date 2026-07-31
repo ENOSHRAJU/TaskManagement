@@ -4,8 +4,10 @@ import com.example.taskManagement.Common.ApiResponse;
 import com.example.taskManagement.DTOs.*;
 import com.example.taskManagement.Service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -26,7 +28,27 @@ public class AuthController {
     )
     @PostMapping("/register")
     public ApiResponse<String> registerUser(@RequestBody @Valid RegisterDTO registerDTO) {
-        return ApiResponse.success("Registered user successfully", authService.registerUser(registerDTO));
+        return ApiResponse.success("Verification email sent successfully", authService.registerUser(registerDTO));
+    }
+
+    @Operation(
+            summary = "Verify email address",
+            description = "Verifies a user's email address using the verification token sent during registration."
+    )
+    @GetMapping("/verify-email")
+    public ApiResponse<String> verifyEmail(
+            @Parameter(description = "Email verification token", required = true)
+            @RequestParam String token) {
+        return ApiResponse.success("Email verified successfully", authService.verifyEmail(token));
+    }
+
+    @Operation(
+            summary = "Refresh access token",
+            description = "Validates the provided refresh token and issues a new JWT access token if the refresh token is valid and not expired."
+    )
+    @PostMapping("/refresh-token")
+    public ApiResponse<RefreshTokenResponseDTO> refreshToken(@RequestBody @Valid RefreshTokenRequestDTO request) {
+        return ApiResponse.success("Access token refreshed successfully", authService.refreshToken(request.getRefreshToken()));
     }
 
     @Operation(
@@ -57,6 +79,18 @@ public class AuthController {
                                            @RequestBody @Valid PasswordResetDTO resetDTO) {
         return ApiResponse.success("Password reset successful",
                 authService.handleResetPassword(token, resetDTO));
+    }
+
+    @Operation(
+            summary = "Logout user",
+            description = "Logs out the authenticated user by invalidating the refresh token."
+    )
+    @PostMapping("/logout")
+    public ApiResponse<String> logout(Authentication authentication) {
+        return ApiResponse.success(
+                "User logged out successfully",
+                authService.logout(authentication)
+        );
     }
 
 }
