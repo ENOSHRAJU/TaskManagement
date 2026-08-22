@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -41,12 +40,11 @@ public class AuthService {
     private final PasswordResetTokenService passwordResetTokenService;
     private final EmailService emailService;
     private final EmailVerificationTokenService emailVerificationTokenService;
-    private final EmailVerificationTokenService emailVerification;
     private final RefreshTokenService refreshTokenService;
     private final CustomUserDetailsService customUserDetailsService;
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthService.class);
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleRepository roleRepository, AuthenticationManager authenticationManager, JwtService jwtService, UserService userService, AuditService auditService, SecurityUtil securityUtil, PasswordResetTokenRepository resetTokenRepository, PasswordResetTokenService passwordResetTokenService, PasswordResetTokenRepository passwordResetTokenRepository, EmailService emailService, EmailVerificationTokenService emailVerificationTokenService, EmailVerificationTokenService emailVerification, RefreshTokenService refreshTokenService, CustomUserDetailsService customUserDetailsService) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleRepository roleRepository, AuthenticationManager authenticationManager, JwtService jwtService, UserService userService, AuditService auditService, SecurityUtil securityUtil, PasswordResetTokenRepository resetTokenRepository, PasswordResetTokenService passwordResetTokenService, PasswordResetTokenRepository passwordResetTokenRepository, EmailService emailService, EmailVerificationTokenService emailVerificationTokenService, RefreshTokenService refreshTokenService, CustomUserDetailsService customUserDetailsService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
@@ -57,36 +55,36 @@ public class AuthService {
         this.passwordResetTokenService = passwordResetTokenService;
         this.emailService = emailService;
         this.emailVerificationTokenService = emailVerificationTokenService;
-        this.emailVerification = emailVerification;
         this.refreshTokenService = refreshTokenService;
         this.customUserDetailsService = customUserDetailsService;
     }
 
     @Transactional
     public String registerUser(RegisterDTO registerDTO) {
-        LOGGER.info("Mail username: {}", System.getenv("MAIL_USERNAME"));
         LOGGER.info("Registration request received for email: {}", registerDTO.getEmail());
-        User user = userService.findUserByEmail(registerDTO.getEmail());
-        if(user == null) {
+        User user = userService.getUserByEmail(registerDTO.getEmail());
+        if(user != null) {
+            if(user.isActive()) {
+                LOGGER.warn("Registration failed: Email already exists: {}", registerDTO.getEmail());
+                throw new DuplicateEmailException("Email already exists");
+            }
+            LOGGER.info("Unverified user re-registering, updating details for userId: {}", user.getId());
+            user.setName(registerDTO.getName());
+            user.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
+            userService.saveUser(user);
+            auditService.log(AuditEntityType.USER, user.getId(), AuditAction.UPDATE, "Name", " - ", user.getName(), user.getId());
+            auditService.log(AuditEntityType.USER, user.getId(), AuditAction.UPDATE, "Password", "[REDACTED]", "[REDACTED]", user.getId());        } else {
             user = new User();
             user.setName(registerDTO.getName());
             user.setEmail(registerDTO.getEmail());
             user.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
             user.getRoles().add(roleRepository.findByRole(RoleTypes.MANAGER.toString())
                     .orElseThrow(() -> new IllegalStateException("Role not found")));
-            userRepository.save(user);
-            LOGGER.info("User registered successfully userId: {}, email: {}", user.getId(), user.getEmail());
+            userService.saveUser(user);
+            LOGGER.info("User registered successfully: {}, with email: {}", user.getId(), user.getEmail());
             auditService.log(AuditEntityType.USER,user.getId(), AuditAction.CREATE,"User", " - ", user.getEmail(), user.getId());
-
-        } else if(user.isActive()) {
-            LOGGER.warn("Registration failed: Email already exists: {}", registerDTO.getEmail());
-            throw new DuplicateEmailException("Email already exists");
-        } else {
-            LOGGER.info("User: {} is registered before but not activated the account", user.getId());
-            user.setName(registerDTO.getName());
-            user.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
         }
-        EmailVerificationToken verificationToken = emailVerification.createOrUpdate(user);
+        EmailVerificationToken verificationToken = emailVerificationTokenService.createOrUpdate(user);
         emailService.sendVerificationEmail(user, verificationToken);
         LOGGER.info("Verification email sent to user {}", user.getId());
         return "Registration request processed successfully. Please check your email to verify your account.";
@@ -103,6 +101,15 @@ public class AuthService {
         if(user.isActive()) {
             LOGGER.info("Email is already verified for user {}", user.getId());
             return "Email is already verified";
+        }
+        if (emailVerificationTokenService.checkTokenExpiry(emailVerificationToken)) {
+            LOGGER.warn("Expired verification token for user {}", user.getId());
+            emailVerificationTokenService.deleteToken(emailVerificationToken);
+            EmailVerificationToken newToken = emailVerificationTokenService.createOrUpdate(user);
+            emailService.sendVerificationEmail(user, newToken);
+            LOGGER.info("New verification email sent to user {}", user.getId());
+            throw new InvalidEmailVerificationToken(
+                    "Your verification link has expired. A new link has been sent to your email.");
         }
         user.setActive(true);
         userRepository.save(user);
@@ -142,7 +149,7 @@ public class AuthService {
     }
 
     @Transactional
-    public RefreshTokenResponseDTO refreshToken(String token) {
+    public RefreshTokenResponseDTO VerifyRefreshToken(String token) {
         LOGGER.info("Refresh token request received");
         RefreshToken refreshToken = refreshTokenService.findByToken(token);
         if (refreshToken == null) {
@@ -181,21 +188,19 @@ public class AuthService {
 
     @Transactional
     public String handleResetPassword(String token, PasswordResetDTO resetDTO) {
-        LOGGER.info("Fetching user using token from password reset token: {}", token);
+        LOGGER.info("Password reset request received");
         PasswordResetToken resetToken = passwordResetTokenService.findUserFromToken(token);
         User user = resetToken.getUser();
         passwordResetTokenService.checkTokenExpiry(resetToken);
-        String oldValue = user.getPassword();
         LOGGER.debug("User successfully loaded: {}", user.getName());
-        if (passwordEncoder.matches(resetDTO.getNewPassword(), oldValue)) {
+        if (passwordEncoder.matches(resetDTO.getNewPassword(), user.getPassword())) {
             LOGGER.warn("User attempted to reuse the existing password. userId={}", user.getId());
             throw new SamePasswordException("New password must be different from old password.");
         }
         user.setPassword(passwordEncoder.encode(resetDTO.getNewPassword()));
         LOGGER.info("Password reset successful for userId: {}", user.getId());
         passwordResetTokenService.deleteToken(resetToken);
-        auditService.log(AuditEntityType.USER, user.getId(), AuditAction.UPDATE, "Password", oldValue, user.getPassword(), user.getId());
-        return "Password reset successfully";
+        auditService.log(AuditEntityType.USER, user.getId(), AuditAction.UPDATE, "Password", "[REDACTED]", "[REDACTED]", user.getId());        return "Password reset successfully";
     }
 
     @Transactional

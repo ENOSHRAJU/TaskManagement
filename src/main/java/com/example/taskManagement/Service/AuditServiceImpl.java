@@ -14,7 +14,7 @@ import java.util.UUID;
 public class AuditServiceImpl implements AuditService {
 
     private final AuditRepository auditRepository;
-    private static final Logger LOGGER = LoggerFactory.getLogger(AuthService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuditServiceImpl.class);
 
     public AuditServiceImpl(AuditRepository auditRepository) {
         this.auditRepository = auditRepository;

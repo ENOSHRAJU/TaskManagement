@@ -48,8 +48,8 @@ public class EmailVerificationTokenServiceImpl implements EmailVerificationToken
     }
 
     @Override
-    public void checkTokenExpiry(EmailVerificationToken verificationToken) {
-        // Temporarily not including expiry check
+    public boolean checkTokenExpiry(EmailVerificationToken verificationToken) {
+        return verificationToken.getExpiryDate().isBefore(LocalDateTime.now());
     }
 
     @Override

@@ -45,7 +45,7 @@ public class AuditLog {
     @Column(name = "performed_by")
     private UUID performedBy;
 
-    @Column(name = "timeStamp", nullable = false)
+    @Column(name = "time_stamp", nullable = false)
     private LocalDateTime createdAt;
 
     @PrePersist

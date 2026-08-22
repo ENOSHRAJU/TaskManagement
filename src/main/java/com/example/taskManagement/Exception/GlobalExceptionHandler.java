@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleValidationException(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
 
-        LOGGER.error("Unhandled exception at: {}", request.getRequestURI(), ex);
+        LOGGER.warn("Unhandled exception at: {}", request.getRequestURI(), ex);
         List<String> details = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
@@ -70,7 +70,7 @@ public class GlobalExceptionHandler {
             BadCredentialsException ex,
             HttpServletRequest request){
 
-        LOGGER.error("Unhandled exception at: {}", request.getRequestURI(), ex);
+        LOGGER.warn("Unhandled exception at: {}", request.getRequestURI(), ex);
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .timeStamp(LocalDateTime.now())
                 .status(HttpStatus.UNAUTHORIZED.value())
@@ -107,7 +107,7 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
 
-        LOGGER.error("Unhandled exception at: {}", request.getRequestURI(), ex);
+        LOGGER.warn("Unhandled exception at: {}", request.getRequestURI(), ex);
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .timeStamp(LocalDateTime.now())
                 .status(HttpStatus.BAD_REQUEST.value())
@@ -144,12 +144,12 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
 
-        LOGGER.error("Unhandled exception at: {}", request.getRequestURI(), ex);
+        LOGGER.warn("Unhandled exception at: {}", request.getRequestURI(), ex);
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .timeStamp(LocalDateTime.now())
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error("Reset token expired")
-                .message("Reset token expired")
+                .message(ex.getMessage())
                 .path(request.getRequestURI())
                 .build();
 
@@ -162,11 +162,11 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
 
-        LOGGER.error("Unhandled exception at: {}", request.getRequestURI(), ex);
+        LOGGER.warn("Unhandled exception at: {}", request.getRequestURI(), ex);
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .timeStamp(LocalDateTime.now())
                 .status(HttpStatus.CONFLICT.value())
-                .error("Conflict: ")
+                .error("Conflict")
                 .message(ex.getMessage())
                 .path(request.getRequestURI())
                 .details(List.of("Email already exists"))
@@ -178,7 +178,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MailAuthenticationException.class)
     public ResponseEntity<ErrorResponse> handleMailAuth(
             MailAuthenticationException ex, HttpServletRequest request) {
-        LOGGER.error("Mail authentication failed at: {}", request.getRequestURI());
+        LOGGER.warn("Mail authentication failed at: {}", request.getRequestURI());
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .timeStamp(LocalDateTime.now())
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
@@ -207,4 +207,84 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(
+            IllegalStateException ex, HttpServletRequest request) {
+        LOGGER.error("Illegal state at {}: {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timeStamp(LocalDateTime.now())
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .error("Internal Server Error")
+                .message("An unexpected state error occurred")
+                .path(request.getRequestURI())
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(AccountNotVerifiedException.class)
+    public ResponseEntity<ErrorResponse> handleAccountNotVerified(
+            AccountNotVerifiedException ex, HttpServletRequest request) {
+        LOGGER.warn("Unverified account login attempt at {}: {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timeStamp(LocalDateTime.now())
+                .status(HttpStatus.FORBIDDEN.value())
+                .error("Account Not Verified")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidRefreshToken(
+            InvalidRefreshTokenException ex, HttpServletRequest request) {
+        LOGGER.warn("Invalid refresh token at {}: {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timeStamp(LocalDateTime.now())
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .error("Invalid Refresh Token")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler({
+            InvalidEmailVerificationToken.class,
+            InActiveUserException.class,
+            InvalidProjectMemberException.class,
+            TaskDoesNotBelongToSameProject.class,
+            InvalidRequestException.class
+    })
+    public ResponseEntity<ErrorResponse> handleBadRequests(
+            RuntimeException ex, HttpServletRequest request) {
+        LOGGER.warn("Bad request at {}: {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timeStamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler({
+            ProjectInActiveException.class,
+            InvalidProjectStatusTransition.class,
+            UserAlreadyPartOfProjectException.class,
+            UserDoesNotBelongToSameProject.class
+    })
+    public ResponseEntity<ErrorResponse> handleConflicts(
+            RuntimeException ex, HttpServletRequest request) {
+        LOGGER.warn("Conflict at {}: {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timeStamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .error("Conflict")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    }
 }

@@ -20,7 +20,7 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private static final Logger LOGGER = LoggerFactory.getLogger(PasswordResetTokenServiceImpl.class);
 
-    public PasswordResetTokenServiceImpl(PasswordResetTokenRepository resetTokenRepository, PasswordResetTokenRepository passwordResetTokenRepository) {
+    public PasswordResetTokenServiceImpl(PasswordResetTokenRepository passwordResetTokenRepository) {
         this.passwordResetTokenRepository = passwordResetTokenRepository;
     }
 
@@ -62,8 +62,7 @@ public class PasswordResetTokenServiceImpl implements PasswordResetTokenService 
 
     @Override
     public void deleteToken(PasswordResetToken resetToken) {
-        resetToken.setToken(null);
-        resetToken.setExpiryTime(null);
-        passwordResetTokenRepository.save(resetToken);
+        passwordResetTokenRepository.delete(resetToken);
+        LOGGER.info("Password reset token deleted for user: {}", resetToken.getUser().getId());
     }
 }

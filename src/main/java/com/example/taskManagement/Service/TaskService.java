@@ -23,7 +23,8 @@ public interface TaskService {
     TaskResponseDTO updateTask(UUID projectId, UUID taskId, TaskUpdateDTO updateDTO);
     TaskResponseDTO assignUser(UUID projectId, UUID userId, UUID taskId);
     TaskResponseDTO updateTaskStatus(UUID projectId, UUID taskId, TaskStatusUpdateDTO taskStatusUpdateDTO);
-    String deleteTask(UUID projectId, UUID taskId); //soft delete
+    String deleteTask(UUID projectId, UUID taskId);
+    List<TaskResponseDTO> getMyOverDueTasks();
     List<TaskResponseDTO> getOverdueTasksForUser(UUID userId);
     List<TaskResponseDTO> getAllOverdueTasks();
 

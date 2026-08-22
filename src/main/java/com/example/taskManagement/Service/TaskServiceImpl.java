@@ -1,6 +1,5 @@
 package com.example.taskManagement.Service;
 
-
 import com.example.taskManagement.Configurations.AuthorizationService;
 import com.example.taskManagement.Configurations.SecurityUtil;
 import com.example.taskManagement.DTOs.TaskRequestDTO;
@@ -26,7 +25,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -70,7 +68,7 @@ public class TaskServiceImpl implements TaskService {
         return projectRepository.findById(projectId)
                 .orElseThrow(() -> {
                     LOGGER.warn("Project not found: {}", projectId);
-                    return new ProjectNotFound("Project not found: "+ projectId);
+                    return new ProjectNotFound("Project not found: " + projectId);
                 });
     }
 
@@ -78,7 +76,7 @@ public class TaskServiceImpl implements TaskService {
         return userRepository.findByIdAndActiveTrue(userId)
                 .orElseThrow(() -> {
                     LOGGER.warn("User not found: {}", userId);
-                    return new UsernameNotFoundException("User not found: "+ userId);
+                    return new UsernameNotFoundException("User not found: " + userId);
                 });
     }
 
@@ -103,8 +101,7 @@ public class TaskServiceImpl implements TaskService {
             String search,
             UUID projectId
     ) {
-
-        if(projectId != null) {
+        if (projectId != null) {
             LOGGER.info("Validating project existence for projectId={}", projectId);
             findProjectById(projectId);
         }
@@ -113,7 +110,7 @@ public class TaskServiceImpl implements TaskService {
         boolean isManager = securityUtil.isManager();
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy.getField()));
         Specification<Task> specification = Specification
-                .where(TaskSpecification.accessibleTasks(isAdmin,isManager, userId))
+                .where(TaskSpecification.accessibleTasks(isAdmin, isManager, userId))
                 .and(TaskSpecification.belongsToProject(projectId))
                 .and(TaskSpecification.hasStatus(status))
                 .and(TaskSpecification.hasCategory(category))
@@ -123,7 +120,7 @@ public class TaskServiceImpl implements TaskService {
         LOGGER.info(
                 "Fetching tasks | page={}, size={}, status={}, priority={}, category={}, assignedTo={}, projectId={}, search={}, sortBy={}, direction={}",
                 page, size, status, priority, category, assignedTo, projectId, search, sortBy, direction);
-        Page<Task> tasks = taskRepository.findAll(specification,pageable);
+        Page<Task> tasks = taskRepository.findAll(specification, pageable);
         LOGGER.debug("Retrieved {} task(s)", tasks.getNumberOfElements());
         return tasks.map(TaskMapper::toDTO);
     }
@@ -191,39 +188,39 @@ public class TaskServiceImpl implements TaskService {
         LOGGER.info("Fetching task with id={}", taskId);
         Task task = findTaskById(taskId);
         LOGGER.debug("Task {} loaded successfully", taskId);
-        if (!task.getProject().getId().equals(projectId)) {  // ← add
+        if (!task.getProject().getId().equals(projectId)) {
             LOGGER.warn("Task {} does not belong to project {}", taskId, projectId);
             throw new TaskDoesNotBelongToSameProject("Task does not belong to this project");
         }
-        if(task.isDeleted()) {
+        if (task.isDeleted()) {
             LOGGER.warn("Attempt to access deleted task with id: {}", taskId);
             throw new TaskNotFound("Task not found with id: " + taskId);
         }
         validateUpdateRequest(updateDTO);
         UUID performedBy = securityUtil.getCurrentUserDetails().getId();
-        if(updateDTO.getTitle() != null) {
+        if (updateDTO.getTitle() != null) {
             String oldValue = task.getTitle();
             task.setTitle(updateDTO.getTitle());
             LOGGER.info("User {} updated task {} title", performedBy, taskId);
-            auditService.log(AuditEntityType.TASK,taskId,AuditAction.UPDATE,"Task Title", oldValue, updateDTO.getTitle(), performedBy);
+            auditService.log(AuditEntityType.TASK, taskId, AuditAction.UPDATE, "Task Title", oldValue, updateDTO.getTitle(), performedBy);
         }
-        if(updateDTO.getDescription() != null) {
+        if (updateDTO.getDescription() != null) {
             String oldValue = task.getDescription();
             task.setDescription(updateDTO.getDescription());
             LOGGER.info("User {} updated task {} description", performedBy, taskId);
-            auditService.log(AuditEntityType.TASK,taskId,AuditAction.UPDATE,"Task Description", oldValue, updateDTO.getDescription(), performedBy);
+            auditService.log(AuditEntityType.TASK, taskId, AuditAction.UPDATE, "Task Description", oldValue, updateDTO.getDescription(), performedBy);
         }
-        if(updateDTO.getTaskPriority() != null) {
+        if (updateDTO.getTaskPriority() != null) {
             String oldValue = task.getTaskPriority().name();
             task.setTaskPriority(updateDTO.getTaskPriority());
             LOGGER.info("User {} updated task {} priority", performedBy, taskId);
-            auditService.log(AuditEntityType.TASK,taskId,AuditAction.UPDATE,"Task Priority", oldValue, updateDTO.getTaskPriority().name(), performedBy);
+            auditService.log(AuditEntityType.TASK, taskId, AuditAction.UPDATE, "Task Priority", oldValue, updateDTO.getTaskPriority().name(), performedBy);
         }
-        if(updateDTO.getDueDate() != null) {
+        if (updateDTO.getDueDate() != null) {
             String oldValue = String.valueOf(task.getDueDate());
             task.setDueDate(updateDTO.getDueDate());
             LOGGER.info("User {} updated task {} due date", performedBy, taskId);
-            auditService.log(AuditEntityType.TASK,taskId,AuditAction.UPDATE,"Task Due date", oldValue, String.valueOf(updateDTO.getDueDate()), performedBy);
+            auditService.log(AuditEntityType.TASK, taskId, AuditAction.UPDATE, "Task Due date", oldValue, String.valueOf(updateDTO.getDueDate()), performedBy);
         }
         taskRepository.save(task);
         LOGGER.info("Task {} updated successfully by user {}", taskId, performedBy);
@@ -236,9 +233,9 @@ public class TaskServiceImpl implements TaskService {
         LOGGER.info("Finding project with id: {}", projectId);
         Project project = findProjectById(projectId);
         LOGGER.debug("Project {} loaded successfully", projectId);
-        LOGGER.info("Validating project {} is active before creating task", projectId);  // ← only here
+        LOGGER.info("Validating project {} is active before assigning user", projectId);
         validateProjectIsActive(project);
-        LOGGER.info("Validating user ownership for project: {}", projectId);
+        LOGGER.info("Validating project access before assigning user in project: {}", projectId);
         authorizationService.validateProjectAccess(project);
         LOGGER.info("Finding task: {}", taskId);
         Task task = findTaskById(taskId);
@@ -247,7 +244,7 @@ public class TaskServiceImpl implements TaskService {
             LOGGER.warn("Task {} does not belong to project {}", taskId, projectId);
             throw new TaskDoesNotBelongToSameProject("Task does not belong to this project");
         }
-        if(task.isDeleted()) {
+        if (task.isDeleted()) {
             LOGGER.warn("Attempt to assign user to deleted task with id: {}", taskId);
             throw new TaskNotFound("Task not found: " + taskId);
         }
@@ -259,16 +256,16 @@ public class TaskServiceImpl implements TaskService {
             throw new UserDoesNotBelongToSameProject(
                     "User " + userId + " is not a member of project " + projectId);
         }
-        if(task.getAssignedTo() != null && task.getAssignedTo().getId().equals(userId)) {
+        if (task.getAssignedTo() != null && task.getAssignedTo().getId().equals(userId)) {
             LOGGER.warn("Task {} is already assigned to the same user {}", taskId, userId);
-            throw new InvalidRequestException("Task is already assigned to this user "+ userId);
+            throw new InvalidRequestException("Task is already assigned to this user " + userId);
         }
         UUID performedBy = securityUtil.getCurrentUserDetails().getId();
         String oldValue = task.getAssignedTo() == null ? " - " : task.getAssignedTo().getName();
         LOGGER.info("User {} assigning task: {} to developer: {}", performedBy, taskId, userId);
         task.setAssignedTo(user);
         LOGGER.debug("User {} assigned task: {} to developer: {}", performedBy, taskId, userId);
-        if(task.getStatus() == TaskStatus.OPEN) {
+        if (task.getStatus() == TaskStatus.OPEN) {
             task.setStatus(TaskStatus.IN_PROGRESS);
         }
         taskRepository.save(task);
@@ -283,9 +280,9 @@ public class TaskServiceImpl implements TaskService {
         LOGGER.info("Finding project with id: {}", projectId);
         Project project = findProjectById(projectId);
         LOGGER.debug("Project {} loaded successfully", projectId);
-        LOGGER.info("Validating project {} is active before creating task", projectId);  // ← only here
+        LOGGER.info("Validating project {} is active before updating task status", projectId);
         validateProjectIsActive(project);
-        LOGGER.info("Validating user ownership for project: {}", projectId);
+        LOGGER.info("Validating project access before updating task status in project: {}", projectId);
         authorizationService.validateProjectAccess(project);
         LOGGER.info("Finding task {} to update status {}", taskId, taskStatusUpdateDTO.getStatus());
         Task task = findTaskById(taskId);
@@ -298,11 +295,11 @@ public class TaskServiceImpl implements TaskService {
             LOGGER.warn("Task {} does not belong to project {}", taskId, projectId);
             throw new TaskDoesNotBelongToSameProject("Task does not belong to this project");
         }
-        if(task.isDeleted()) {
+        if (task.isDeleted()) {
             LOGGER.warn("Attempt to update deleted task: {}", taskId);
             throw new TaskNotFound("Task not found: " + taskId);
         }
-        if(task.getStatus().equals(taskStatusUpdateDTO.getStatus())) {
+        if (task.getStatus().equals(taskStatusUpdateDTO.getStatus())) {
             LOGGER.warn("Task {} is already in status {}", taskId, task.getStatus());
             throw new InvalidRequestException("Task is already in the requested status.");
         }
@@ -321,9 +318,9 @@ public class TaskServiceImpl implements TaskService {
         LOGGER.info("Finding project with id: {}", projectId);
         Project project = findProjectById(projectId);
         LOGGER.debug("Project {} loaded successfully", projectId);
-        LOGGER.info("Validating project {} is active before creating task", projectId);  // ← only here
+        LOGGER.info("Validating project {} is active before deleting task", projectId);
         validateProjectIsActive(project);
-        LOGGER.info("Validating user ownership for project: {}", projectId);
+        LOGGER.info("Validating project ownership before deleting task in project: {}", projectId);
         authorizationService.validateProjectOwnership(project);
         LOGGER.info("Finding task to delete: {}", taskId);
         Task task = findTaskById(taskId);
@@ -332,31 +329,53 @@ public class TaskServiceImpl implements TaskService {
             LOGGER.warn("Task {} does not belong to project {}", taskId, projectId);
             throw new TaskDoesNotBelongToSameProject("Task does not belong to this project");
         }
-        if(task.isDeleted()) {
+        if (task.isDeleted()) {
             LOGGER.warn("Task {} is already deleted", taskId);
             throw new InvalidRequestException("Task is already deleted.");
         }
         UUID performedBy = securityUtil.getCurrentUserDetails().getId();
         task.setDeleted(true);
-        LOGGER.info("Task successfully deleted with id: {}", taskId);
+        taskRepository.save(task);
+        LOGGER.info("Task {} successfully soft-deleted by user {}", taskId, performedBy);
         auditService.log(AuditEntityType.TASK, taskId, AuditAction.DELETE, "Deleted", "false", "true", performedBy);
         return "Deleted successfully";
     }
 
     @Override
-    public List<TaskResponseDTO> getOverdueTasksForUser(UUID userId) {
-        findUserById(userId); // validate user exists
-        return taskRepository.findByAssignedToIdAndStatusAndDeletedFalse(userId, TaskStatus.OVERDUE)
+    public List<TaskResponseDTO> getMyOverDueTasks() {
+        UUID loggedUserId = securityUtil.getCurrentUserDetails().getId();
+        LOGGER.info("Fetching overdue tasks for logged in user {}", loggedUserId);
+        List<TaskResponseDTO> overdueTasks = taskRepository
+                .findByAssignedToIdAndStatusAndDeletedFalse(loggedUserId, TaskStatus.OVERDUE)
                 .stream()
                 .map(TaskMapper::toDTO)
                 .toList();
+        LOGGER.debug("Found {} overdue tasks for user {}", overdueTasks.size(), loggedUserId);
+        return overdueTasks;
+    }
+
+    @Override
+    public List<TaskResponseDTO> getOverdueTasksForUser(UUID userId) {
+        LOGGER.info("Fetching overdue tasks for userId: {}", userId);
+        findUserById(userId);
+        List<TaskResponseDTO> overdueTasks = taskRepository
+                .findByAssignedToIdAndStatusAndDeletedFalse(userId, TaskStatus.OVERDUE)
+                .stream()
+                .map(TaskMapper::toDTO)
+                .toList();
+        LOGGER.debug("Found {} overdue tasks for userId {}", overdueTasks.size(), userId);
+        return overdueTasks;
     }
 
     @Override
     public List<TaskResponseDTO> getAllOverdueTasks() {
-        return taskRepository.findByStatusAndDeletedFalse(TaskStatus.OVERDUE)
+        LOGGER.info("Admin fetching all overdue tasks system-wide");
+        List<TaskResponseDTO> overdueTasks = taskRepository
+                .findByStatusAndDeletedFalse(TaskStatus.OVERDUE)
                 .stream()
                 .map(TaskMapper::toDTO)
                 .toList();
+        LOGGER.debug("Found {} overdue tasks system-wide", overdueTasks.size());
+        return overdueTasks;
     }
 }

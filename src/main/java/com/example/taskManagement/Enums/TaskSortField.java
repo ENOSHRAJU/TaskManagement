@@ -3,7 +3,7 @@ package com.example.taskManagement.Enums;
 public enum TaskSortField {
     TITLE("title"),
     STATUS("status"),
-    PRIORITY("priority"),
+    PRIORITY("taskPriority"),
     DUE_DATE("dueDate"),
     CREATED_AT("createdAt");
 

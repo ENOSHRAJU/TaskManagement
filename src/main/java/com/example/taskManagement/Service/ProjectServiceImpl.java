@@ -92,33 +92,6 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public List<ProjectResponseDTO> getProjectsByStatus(ProjectStatus status) {
-        UUID userId = securityUtil.getCurrentUserDetails().getId();
-        List<Project> projects;
-        if(securityUtil.isAdmin()) {
-            LOGGER.info("Admin {} fetching all projects with status: {}",userId, status);
-            projects = projectRepository.findByStatus(status);
-        } else if(securityUtil.isManager()) {
-            LOGGER.info("Manager {} fetching all project with status: {}",userId, status);
-            projects = projectRepository.findByCreatedBy_IdAndStatus(userId, status);
-        } else {
-            LOGGER.info("User {} fetching all project with status: {}",userId, status);
-            projects = projectRepository.findByMembers_IdAndStatus(userId, status);
-        }
-        return projects.stream()
-                .map(ProjectMapper::toDTO)
-                .toList();
-    }
-
-    @Override
-    public List<ProjectResponseDTO> getProjectsByCreatedBy(UUID userId) {
-        LOGGER.info("Fetching all projects with createdBy: {}", userId);
-        return projectRepository.findByCreatedBy_IdAndStatusNot(userId, ProjectStatus.CANCELLED).stream()
-                .map(ProjectMapper::toDTO)
-                .toList();
-    }
-
-    @Override
     public Page<UserSummaryDTO> getAllUsersByProject(
             UUID projectId,
             int page, int size,
@@ -161,6 +134,8 @@ public class ProjectServiceImpl implements ProjectService {
         LOGGER.info("Finding project to update: {}", projectId);
         Project project = findProjectById(projectId);
         LOGGER.debug("Project {} loaded successfully", projectId);
+        LOGGER.info("Checking if manager is authorised to make the updates");
+        authorizationService.validateProjectOwnership(project);
         UUID userId = securityUtil.getCurrentUserDetails().getId();
         if(updateDTO.getName() != null && !project.getName().equals(updateDTO.getName()))  {
             String oldValue = project.getName();
@@ -242,7 +217,7 @@ public class ProjectServiceImpl implements ProjectService {
             LOGGER.warn("InActive user {} cannot be part of a project: {}", userId, projectId);
             throw new InActiveUserException("InActive user cannot be part of a project: "+ projectId);
         }
-        if(user.getRoles().contains(RoleTypes.ADMIN) || user.getRoles().contains(RoleTypes.MANAGER)) {
+        if(!userService.hasRole(user.getRoles(),RoleTypes.USER)) {
             LOGGER.warn("Only developers can be added to a project: {}", projectId);
             throw new InvalidProjectMemberException("Only developers can be added to a project: "+ projectId);
         }
@@ -267,13 +242,13 @@ public class ProjectServiceImpl implements ProjectService {
         authorizationService.validateProjectOwnership(project);
         if(project.getStatus() == ProjectStatus.CANCELLED || project.getStatus() == ProjectStatus.COMPLETED) {
             LOGGER.warn("User cannot be removed from an in-active project {}", projectId);
-            throw new ProjectInActiveException("User cannot be removed from an in-active project {}"+ projectId);
+            throw new ProjectInActiveException("User cannot be removed from an in-active project "+ projectId);
         }
         UUID performedBy = securityUtil.getCurrentUserDetails().getId();
         LOGGER.info("Finding user to remove from a project: {}", userId);
         User user = userService.findUserById(userId);
         LOGGER.debug("Found user to remove from a project: {}", userId);
-        if(user.getRoles().contains(RoleTypes.ADMIN) || user.getRoles().contains(RoleTypes.MANAGER)) {
+        if(!userService.hasRole(user.getRoles(),RoleTypes.USER)) {
             LOGGER.warn("Only developers can be removed from a project: {}", projectId);
             throw new InvalidProjectMemberException("Only developers can be removed from a project: "+ projectId);
         }

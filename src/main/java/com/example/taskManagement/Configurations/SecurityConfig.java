@@ -68,12 +68,13 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html").permitAll()
-//                        .requestMatchers(HttpMethod.POST, "/projects/**").hasRole("ADMIN")
-//                        .requestMatchers("/tasks/**").hasAnyRole("ADMIN", "TEAM_LEAD", "USER")
+                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .httpBasic(basic -> basic.disable())
                 .formLogin(form -> form.disable())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                ;
 
         return http.build();
     }

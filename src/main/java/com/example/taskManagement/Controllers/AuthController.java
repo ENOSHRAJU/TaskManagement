@@ -47,8 +47,8 @@ public class AuthController {
             description = "Validates the provided refresh token and issues a new JWT access token if the refresh token is valid and not expired."
     )
     @PostMapping("/refresh-token")
-    public ApiResponse<RefreshTokenResponseDTO> refreshToken(@RequestBody @Valid RefreshTokenRequestDTO request) {
-        return ApiResponse.success("Access token refreshed successfully", authService.refreshToken(request.getRefreshToken()));
+    public ApiResponse<RefreshTokenResponseDTO> verifyRefreshToken(@RequestBody @Valid RefreshTokenRequestDTO request) {
+        return ApiResponse.success("Access token refreshed successfully", authService.VerifyRefreshToken(request.getRefreshToken()));
     }
 
     @Operation(

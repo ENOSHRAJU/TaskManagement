@@ -1,7 +1,9 @@
 package com.example.taskManagement.Service;
 
+import com.example.taskManagement.Enums.RoleTypes;
 import com.example.taskManagement.Exception.DuplicateEmailException;
 import com.example.taskManagement.Exception.UserNotFound;
+import com.example.taskManagement.Model.Role;
 import com.example.taskManagement.Model.User;
 import com.example.taskManagement.Repository.UserRepository;
 import org.slf4j.Logger;
@@ -11,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -24,12 +27,22 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public boolean hasRole(Set<Role> roles, RoleTypes roleType) {
+        return roles.stream().anyMatch(role -> role.getRole().equals(roleType.name()));
+    }
+
+    @Override
     public User findUserById(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> {
                     LOGGER.warn("User not found in database: " + userId);
                     return new UserNotFound("User not found with id: " + userId);
                 });
+    }
+
+    @Override
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email).orElse(null);
     }
 
     @Override
@@ -58,5 +71,10 @@ public class UserServiceImpl implements UserService {
         if (roles.contains("ROLE_ADMIN")) return "ADMIN";
         if (roles.contains("ROLE_MANAGER")) return "MANAGER";
         return "USER";
+    }
+
+    @Override
+    public void saveUser(User user) {
+        userRepository.save(user);
     }
 }

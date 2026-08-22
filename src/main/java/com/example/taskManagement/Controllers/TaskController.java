@@ -2,25 +2,17 @@ package com.example.taskManagement.Controllers;
 
 import com.example.taskManagement.Common.ApiResponse;
 import com.example.taskManagement.DTOs.TaskResponseDTO;
-import com.example.taskManagement.DTOs.TaskStatusUpdateDTO;
-import com.example.taskManagement.DTOs.TaskUpdateDTO;
 import com.example.taskManagement.Enums.TaskCategory;
 import com.example.taskManagement.Enums.TaskPriority;
 import com.example.taskManagement.Enums.TaskSortField;
 import com.example.taskManagement.Enums.TaskStatus;
 import com.example.taskManagement.Service.TaskService;
-import com.example.taskManagement.Service.TaskServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.persistence.PreUpdate;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,7 +26,7 @@ public class TaskController {
 
     private final TaskService taskService;
 
-    public TaskController(TaskServiceImpl taskService) {
+    public TaskController(TaskService taskService) {
         this.taskService = taskService;
     }
 
@@ -68,15 +60,36 @@ public class TaskController {
         return ApiResponse.success("Task retrieved successfully", taskService.getTaskById(taskId));
     }
 
-    @GetMapping("/user/{userId}/overdue")
-    public ResponseEntity<List<TaskResponseDTO>> getOverdueTasksForUser(@PathVariable UUID userId) {
-        return ResponseEntity.ok(taskService.getOverdueTasksForUser(userId));
+    @Operation(
+            summary = "Get my overdue tasks",
+            description = "Retrieves all overdue tasks assigned to a logged in user."
+    )
+    @GetMapping("/my/overdue")
+    public ApiResponse<List<TaskResponseDTO>> getMyOverDueTasks() {
+        return ApiResponse.success("Overdue tasks retrieved successfully",
+                taskService.getMyOverDueTasks());
     }
 
+    @Operation(
+            summary = "Get overdue tasks for a specific user",
+            description = "Admin and Manager only. Retrieves all overdue tasks assigned to a specific user by ID."
+    )
+    @GetMapping("/user/{userId}/overdue")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ApiResponse<List<TaskResponseDTO>> getOverdueTasksForUser(@PathVariable UUID userId) {
+        return ApiResponse.success("Overdue tasks retrieved successfully",
+                taskService.getOverdueTasksForUser(userId));
+    }
+
+    @Operation(
+            summary = "Get all overdue tasks",
+            description = "Admin only. Retrieves all overdue tasks across all projects."
+    )
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/overdue")
-    public ResponseEntity<List<TaskResponseDTO>> getAllOverdueTasks() {
-        return ResponseEntity.ok(taskService.getAllOverdueTasks());
+    public ApiResponse<List<TaskResponseDTO>> getAllOverdueTasks() {
+        return ApiResponse.success("All overdue tasks retrieved successfully",
+                taskService.getAllOverdueTasks());
     }
 
 }
