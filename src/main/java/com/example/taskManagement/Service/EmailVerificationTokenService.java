@@ -9,6 +9,6 @@ public interface EmailVerificationTokenService {
     EmailVerificationToken findByUserId(UUID userId);
     EmailVerificationToken createOrUpdate(User user);
     EmailVerificationToken findByToken(String token);
-    void checkTokenExpiry(EmailVerificationToken verificationToken);
+    boolean checkTokenExpiry(EmailVerificationToken verificationToken);
     void deleteToken(EmailVerificationToken verificationToken);
 }

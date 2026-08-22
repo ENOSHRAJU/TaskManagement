@@ -39,7 +39,7 @@ public class Task {
     private TaskStatus status;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "taskCategory", nullable = false)
+    @Column(name = "task_category", nullable = false)
     private TaskCategory taskCategory;
 
     @Enumerated(EnumType.STRING)
@@ -75,7 +75,6 @@ public class Task {
 
     @PreUpdate
     public void postPersist() {
-        System.out.println("PreUpdate executed");
         this.updatedAt = LocalDateTime.now();
     }
 

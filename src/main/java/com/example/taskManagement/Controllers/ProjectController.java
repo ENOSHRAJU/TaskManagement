@@ -253,32 +253,4 @@ public class ProjectController {
 
     }
 
-    // To be removed
-    @Operation(
-            summary = "Get projects by status",
-            description = "Retrieves projects filtered by their status"
-    )
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
-    @GetMapping("/status/{status}")
-    public ApiResponse<List<ProjectResponseDTO>> getProjectsByStatus(@PathVariable ProjectStatus status) {
-        return ApiResponse.success(
-                "Retrieved projects by status",
-                projectService.getProjectsByStatus(status)
-        );
-    }
-
-    // To be removed
-    @Operation(
-            summary = "Get projects created by user",
-            description = "Retrieved all projects created by a user"
-    )
-    @PreAuthorize("hasAnyRole('ADMIN')")
-    @GetMapping("/created-by/{userId}")
-    public ApiResponse<List<ProjectResponseDTO>> getProjectsByCreatedBy(@PathVariable UUID userId) {
-        return ApiResponse.success(
-                "Retrieved all projects created by the user",
-                projectService.getProjectsByCreatedBy(userId)
-        );
-    }
-
 }
