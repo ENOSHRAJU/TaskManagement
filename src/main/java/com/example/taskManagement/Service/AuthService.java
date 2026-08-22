@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -61,6 +62,7 @@ public class AuthService {
 
     @Transactional
     public String registerUser(RegisterDTO registerDTO) {
+        LOGGER.info("Mail username: {}", System.getenv("MAIL_USERNAME"));
         LOGGER.info("Registration request received for email: {}", registerDTO.getEmail());
         User user = userService.getUserByEmail(registerDTO.getEmail());
         if(user != null) {
@@ -201,6 +203,17 @@ public class AuthService {
         LOGGER.info("Password reset successful for userId: {}", user.getId());
         passwordResetTokenService.deleteToken(resetToken);
         auditService.log(AuditEntityType.USER, user.getId(), AuditAction.UPDATE, "Password", "[REDACTED]", "[REDACTED]", user.getId());        return "Password reset successfully";
+    }
+
+    @Transactional
+    public String logout(Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        LOGGER.info("Logout request received for user {}", userDetails.getId());
+        User user = userService.findUserById(userDetails.getId());
+        refreshTokenService.deleteToken(user);
+        LOGGER.info("Refresh token deleted for user {}", user.getId());
+        LOGGER.info("User {} logged out successfully", user.getId());
+        return "User logged out successfully";
     }
 
     @Transactional
