@@ -52,7 +52,7 @@ public class TaskServiceImpl implements TaskService {
         if (project.getStatus() == ProjectStatus.CANCELLED ||
                 project.getStatus() == ProjectStatus.COMPLETED) {
             LOGGER.warn("Attempt to modify inactive project {} with status {}", project.getId(), project.getStatus());
-            throw new ProjectInActiveException("Cannot modify an inactive project.");
+            throw new ProjectInActiveException("Cannot modify an inactive project: " + project.getId());
         }
     }
 
@@ -185,17 +185,18 @@ public class TaskServiceImpl implements TaskService {
         validateProjectIsActive(project);
         LOGGER.info("Validating project ownership before updating task {}", taskId);
         authorizationService.validateProjectOwnership(project);
-        LOGGER.info("Fetching task with id={}", taskId);
+        LOGGER.info("Fetching task with id {}", taskId);
         Task task = findTaskById(taskId);
         LOGGER.debug("Task {} loaded successfully", taskId);
         if (!task.getProject().getId().equals(projectId)) {
             LOGGER.warn("Task {} does not belong to project {}", taskId, projectId);
-            throw new TaskDoesNotBelongToSameProject("Task does not belong to this project");
+            throw new TaskDoesNotBelongToSameProject("Task does not belong to same project");
         }
         if (task.isDeleted()) {
             LOGGER.warn("Attempt to access deleted task with id: {}", taskId);
             throw new TaskNotFound("Task not found with id: " + taskId);
         }
+        // If title and description comes as empty - something like '    '.
         validateUpdateRequest(updateDTO);
         UUID performedBy = securityUtil.getCurrentUserDetails().getId();
         if (updateDTO.getTitle() != null) {
@@ -335,6 +336,7 @@ public class TaskServiceImpl implements TaskService {
         }
         UUID performedBy = securityUtil.getCurrentUserDetails().getId();
         task.setDeleted(true);
+        task.setStatus(TaskStatus.CANCELLED);
         taskRepository.save(task);
         LOGGER.info("Task {} successfully soft-deleted by user {}", taskId, performedBy);
         auditService.log(AuditEntityType.TASK, taskId, AuditAction.DELETE, "Deleted", "false", "true", performedBy);
