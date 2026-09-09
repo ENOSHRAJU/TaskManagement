@@ -48,7 +48,7 @@ public class AuthorizationService {
 
         if(!member) {
             LOGGER.warn("User: {} tried to access unauthorized project: {}", userId, project.getId());
-            throw new AccessDeniedException("You are not authorized to access this project");
+            throw new AccessDeniedException("You are not authorized to access this project: "+ project.getId());
         }
     }
 
