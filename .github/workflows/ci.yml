@@ -40,3 +40,13 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
           MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+
+  enforce-merge-source:
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce merge source
+        if: github.head_ref != 'develop'
+        run: |
+          echo "Only the develop branch can be merged into main."
+          exit 1
