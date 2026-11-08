@@ -1,5 +1,6 @@
 package com.example.taskManagement.DTOs;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -37,5 +38,6 @@ public class LoginResponseDTO {
             description = "Refresh token for authenticated user",
             example = "550e8400-e29b-41d4-a716-446655440000"
     )
+    @JsonIgnore
     private String refreshToken;
 }

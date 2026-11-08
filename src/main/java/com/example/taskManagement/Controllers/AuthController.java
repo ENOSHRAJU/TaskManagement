@@ -1,12 +1,16 @@
 package com.example.taskManagement.Controllers;
 
 import com.example.taskManagement.Common.ApiResponse;
+import com.example.taskManagement.Common.RefreshTokenCookie;
 import com.example.taskManagement.DTOs.*;
+import com.example.taskManagement.Exception.InvalidRefreshTokenException;
 import com.example.taskManagement.Service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,9 +21,11 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final RefreshTokenCookie refreshTokenCookie;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, RefreshTokenCookie refreshTokenCookie) {
         this.authService = authService;
+        this.refreshTokenCookie = refreshTokenCookie;
     }
 
     @Operation(
@@ -47,8 +53,11 @@ public class AuthController {
             description = "Validates the provided refresh token and issues a new JWT access token if the refresh token is valid and not expired."
     )
     @PostMapping("/refresh-token")
-    public ApiResponse<RefreshTokenResponseDTO> verifyRefreshToken(@RequestBody @Valid RefreshTokenRequestDTO request) {
-        return ApiResponse.success("Access token refreshed successfully", authService.VerifyRefreshToken(request.getRefreshToken()));
+    public ApiResponse<RefreshTokenResponseDTO> verifyRefreshToken(@CookieValue(name = "refreshToken", required = false) String token) {
+        if (token == null) {
+            throw new InvalidRefreshTokenException("Session expired. Please login again.");
+        }
+        return ApiResponse.success("Access token refreshed successfully", authService.VerifyRefreshToken(token));
     }
 
     @Operation(
@@ -56,7 +65,9 @@ public class AuthController {
             description = "Authenticate user using email and password and return JWT token"
     )
     @PostMapping("/login")
-    public ApiResponse<LoginResponseDTO> login(@RequestBody  @Valid LoginRequestDTO requestDTO) {
+    public ApiResponse<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO requestDTO, HttpServletResponse response) {
+        LoginResponseDTO result = authService.login(requestDTO);
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.create(result.getRefreshToken()).toString());
         return ApiResponse.success("User logged in successfully", authService.login(requestDTO));
     }
 
@@ -86,10 +97,12 @@ public class AuthController {
             description = "Logs out the authenticated user by invalidating the refresh token."
     )
     @PostMapping("/logout")
-    public ApiResponse<String> logout(Authentication authentication) {
+    public ApiResponse<String> logout(Authentication authentication, HttpServletResponse response) {
+        String message = authService.logout(authentication);
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.clear().toString());
         return ApiResponse.success(
                 "User logged out successfully",
-                authService.logout(authentication)
+                message
         );
     }
 
