@@ -68,7 +68,7 @@ public class AuthController {
     public ApiResponse<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO requestDTO, HttpServletResponse response) {
         LoginResponseDTO result = authService.login(requestDTO);
         response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.create(result.getRefreshToken()).toString());
-        return ApiResponse.success("User logged in successfully", authService.login(requestDTO));
+        return ApiResponse.success("User logged in successfully", result);
     }
 
     @Operation(
